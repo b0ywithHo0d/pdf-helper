@@ -6,7 +6,7 @@ from PyPDF2 import PdfReader
 
 st.set_page_config(page_title="ChatPDF", layout="wide")
 
-# 1. 세션 데이터 초기화
+# 세션 데이터 초기화
 if "openai_api_key" not in st.session_state:
     st.session_state.openai_api_key = ""
 if "uploaded_file_id" not in st.session_state:
@@ -16,7 +16,7 @@ if "conversation" not in st.session_state:
 if "pdf_text" not in st.session_state:
     st.session_state.pdf_text = ""
 
-# 2. PDF에서 텍스트 추출
+# PDF에서 텍스트 추출
 def extract_pdf_text(file):
     reader = PdfReader(file)
     text = ""
@@ -26,7 +26,7 @@ def extract_pdf_text(file):
             text += content + "\n"
     return text
 
-# 3. PDF를 OpenAI에 업로드
+# PDF를 OpenAI에 업로드
 def upload_pdf_to_openai(file_path, api_key):
     openai.api_key = api_key
     file_obj = openai.files.create(
@@ -35,7 +35,7 @@ def upload_pdf_to_openai(file_path, api_key):
     )
     return file_obj.id
 
-# 4. OpenAI 파일 삭제
+# OpenAI 파일 삭제
 def delete_openai_file(file_id, api_key):
     openai.api_key = api_key
     try:
@@ -43,21 +43,23 @@ def delete_openai_file(file_id, api_key):
     except Exception:
         pass  # 이미 삭제된 파일 대비 예외처리
 
-# 5. OpenAI Assistant API로 질의하기 (gpt-4o)
+# 최신 openai openai(>=1.12.*) 규격에 맞게 고친 어시스턴트 챗 함수
 def chat_with_file(prompt, file_id, api_key):
     openai.api_key = api_key
+    # Assistant 생성 (file_ids 없이)
     assistant = openai.beta.assistants.create(
         instructions="너는 사용자가 올린 PDF 내용에 충실히 답하는 도움말 챗봇이야.",
         model="gpt-4o",
         tools=[{"type": "file_search"}],
-        file_ids=[file_id]
     )
+    # Thread 생성
     thread = openai.beta.threads.create()
-    # User 메시지 등록
+    # User message 생성 (여기서 files로 파일 첨부)
     openai.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
-        content=prompt
+        content=prompt,
+        files=[file_id]
     )
     # Run Assistant
     run = openai.beta.threads.runs.create(

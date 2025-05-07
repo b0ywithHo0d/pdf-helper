@@ -3,3 +3,4 @@ streamlit
 PyMuPDF
 langchain
 faiss-cpu
+faiss-gpu 

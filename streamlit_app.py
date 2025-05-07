@@ -40,13 +40,12 @@ def delete_openai_file(file_id, api_key):
     openai.api_key = api_key
     try:
         openai.files.delete(file_id)
-    except Exception as e:
+    except Exception:
         pass  # 이미 삭제된 파일 대비 예외처리
 
 # 5. OpenAI Assistant API로 질의하기 (gpt-4o)
 def chat_with_file(prompt, file_id, api_key):
     openai.api_key = api_key
-    # Assistant 임시 생성
     assistant = openai.beta.assistants.create(
         instructions="너는 사용자가 올린 PDF 내용에 충실히 답하는 도움말 챗봇이야.",
         model="gpt-4o",
@@ -73,15 +72,15 @@ def chat_with_file(prompt, file_id, api_key):
         if run_status.status == "completed":
             break
         time.sleep(1)
-    # 답변 추출
     messages = openai.beta.threads.messages.list(thread_id=thread.id)
     return messages.data[0].content[0].text.value
 
-# 6. UI
-st.title("📄 ChatPDF")
-st.write("Streamlit file uploader를 통해 PDF를 업로드 후, PDF 내용을 이용해 대화해보세요.")
+# ------------------------------- UI -------------------------------
 
-# OpenAI API 키 입력 (비밀번호형)
+st.title("📄 ChatPDF")
+st.write("PDF를 올리고, 업로드한 파일 내용만으로 대화해보세요.")
+
+# OpenAI API Key 입력 (비밀번호 스타일)
 api_key = st.text_input(
     "OpenAI API 키를 입력하세요:",
     type="password",
@@ -99,7 +98,7 @@ if not st.session_state.openai_api_key:
 uploaded_file = st.file_uploader("PDF 파일 업로드", type=["pdf"])
 
 # Clear 버튼 (파일 및 대화 내역 삭제)
-col1, col2 = st.columns([1,4])
+col1, col2 = st.columns([1, 4])
 with col1:
     if st.button("Clear 파일/세션"):
         if st.session_state.uploaded_file_id:
@@ -108,7 +107,7 @@ with col1:
         st.session_state.conversation = []
         st.session_state.pdf_text = ""
         st.success("업로드한 파일 및 대화 세션이 초기화 되었습니다!")
-        st.experimental_rerun()
+        st.rerun()
 
 # 새 PDF 업로드시 flow
 if uploaded_file is not None and st.session_state.uploaded_file_id is None:
@@ -122,8 +121,9 @@ if uploaded_file is not None and st.session_state.uploaded_file_id is None:
         os.remove(tmp_path)
     st.session_state.uploaded_file_id = file_id
     st.success("파일 업로드 성공 및 인덱싱 완료! 질문을 입력해보세요.")
+    st.rerun()
 
-# PDF 업로드 후 ui
+# PDF 업로드 후 UI
 if st.session_state.uploaded_file_id:
     st.text_area("PDF 미리보기", value=st.session_state.pdf_text[:1000], height=200)
 
@@ -146,6 +146,6 @@ if st.session_state.uploaded_file_id:
             except Exception as e:
                 bot_resp = f"오류가 발생했습니다: {e}"
         st.session_state.conversation.append(("assistant", bot_resp))
-        st.experimental_rerun()
+        st.rerun()
 else:
     st.info("먼저 PDF 파일을 업로드하세요.")

@@ -1,7 +1,7 @@
 import streamlit as st
 import openai
 import PyPDF2
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.docstore.document import Document
 
